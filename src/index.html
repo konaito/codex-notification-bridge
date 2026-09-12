@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codex | 作業中のセッション</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+        color: #1e2430;
+        background: #eef1f6;
+        font-synthesis: none;
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-width: 0;
+        min-height: 100vh;
+        margin: 0;
+        background: #f5f6f8;
+      }
+      button, input, textarea { font: inherit; }
+      button { border: 0; }
+      .app-window {
+        min-height: 100vh;
+        background: #f5f6f8;
+      }
+      .app-header { padding: 20px 34px 22px; border-bottom: 1px solid #e1e5eb; background: #fff; }
+      .window-bar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 19px; }
+      .header-actions { display: flex; align-items: center; gap: 10px; }
+      .sync-state { display: inline-flex; align-items: center; gap: 7px; color: #6e7788; font-size: 12px; }
+      .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #41b883; }
+      .sync-dot.loading { background: #f2ad3c; animation: pulse 1s infinite alternate; }
+      .sync-dot.error { background: #e85d75; }
+      @keyframes pulse { to { opacity: .35; } }
+      .icon-button {
+        display: inline-grid; width: 34px; height: 34px; place-items: center;
+        border: 1px solid #e1e5ec; border-radius: 10px; background: #fff; color: #687386;
+        cursor: pointer; transition: .18s ease;
+      }
+      .icon-button:hover { border-color: #a9b8f4; color: #5269d8; background: #f8f9ff; }
+      .eyebrow { margin: 0 0 4px; color: #687386; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+      h1 { margin: 0; color: #131823; font-size: clamp(28px, 3vw, 38px); letter-spacing: -.045em; }
+      .subtitle { margin: 5px 0 0; color: #788396; font-size: 14px; }
+      .dashboard { width: min(1120px, calc(100vw - 68px)); margin: 0 auto; padding: 28px 0 44px; }
+      .empty-state, .error-state { padding: 28px 20px; color: #8a94a6; text-align: center; font-size: 13px; }
+      .error-state { color: #bd5d70; }
+      .composer { margin: 0 0 29px; padding: 0 0 28px; border-bottom: 1px solid #dfe4eb; background: transparent; }
+      .composer-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+      .composer-title strong { color: #4a5569; font-size: 13px; }
+      .composer-title span { color: #a0a8b6; font-size: 11px; }
+      .message-input { display: block; width: 100%; min-height: 110px; padding: 14px 15px; border: 1px solid #cfd7e2; border-radius: 10px; outline: none; resize: vertical; background: #fff; color: #252d3c; font-size: 15px; line-height: 1.65; }
+      .message-input::placeholder { color: #adb5c3; }
+      .message-input:focus { border-color: #9aaaf0; box-shadow: 0 0 0 4px rgba(104, 126, 220, .11); }
+      .candidate-header { display: flex; align-items: center; justify-content: space-between; margin: 17px 2px 8px; }
+      .candidate-header strong { color: #687386; font-size: 12px; }
+      .candidate-header span { color: #a0a8b6; font-size: 11px; }
+      .candidate-header span.prediction-loading { color: #b47b22; }
+      .candidate-header span.prediction-ready { color: #5269d8; }
+      .candidate-header span.prediction-error { color: #bd5d70; }
+      .candidate-list { display: grid; max-height: 390px; gap: 0; overflow-y: auto; border-top: 1px solid #e3e7ed; border-bottom: 1px solid #e3e7ed; }
+      .candidate { display: flex; width: 100%; align-items: center; gap: 12px; padding: 12px 8px; border: 0; border-bottom: 1px solid #e5e8ed; border-radius: 0; background: transparent; color: #303949; text-align: left; cursor: pointer; transition: background .16s ease; }
+      .candidate:hover, .candidate.selected { background: #eef2ff; }
+      .candidate-arrow { width: 14px; color: #7181d9; font-size: 18px; }
+      .candidate-info { min-width: 0; flex: 1; }
+      .candidate-main { display: flex; min-width: 0; align-items: center; gap: 8px; }
+      .candidate-project { color: #687386; font-size: 12px; font-weight: 700; }
+      .candidate-separator { color: #b2bac7; }
+      .candidate-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
+      .candidate-sub { margin-top: 3px; color: #9ba4b2; font-size: 11px; }
+      .candidate-send { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 7px 3px; color: #6272cd; font-size: 11px; font-weight: 700; }
+      .candidate.selected .candidate-send { color: #4f64d4; }
+      .composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 13px; }
+      .keyboard-hint { color: #a0a8b6; font-size: 11px; }
+      .keyboard-hint kbd { display: inline-block; margin: 0 2px; padding: 2px 5px; border: 1px solid #d8dde7; border-radius: 4px; background: #fff; color: #7d8798; font-size: 10px; }
+      .message-status { min-height: 18px; color: #6f7b8f; font-size: 11px; text-align: right; }
+      .message-status.success { color: #39875a; }
+      .message-status.error { color: #bd5d70; }
+      @media (max-width: 860px) {
+        body { min-width: 0; padding: 12px; }
+        .app-header { padding-left: 20px; padding-right: 20px; }
+        .dashboard { width: calc(100vw - 40px); }
+        .composer-title { align-items: flex-start; gap: 12px; }
+        .composer-title span { text-align: right; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-window">
+        <header class="app-header">
+        <div class="window-bar">
+          <div class="header-actions">
+            <span class="sync-state"><i id="sync-dot" class="sync-dot"></i><span id="sync-label">接続準備中</span></span>
+            <button id="refresh" class="icon-button" type="button" aria-label="タスク一覧を更新" title="タスク一覧を更新">↻</button>
+          </div>
+        </div>
+        <p class="eyebrow">CODEX</p>
+        <h1>作業中のセッション</h1>
+        <p class="subtitle">入力文をCodexがタスク名だけでなく、直近の会話と作業状態まで照合して送信先を選びます。</p>
+      </header>
+
+      <section class="dashboard" aria-label="Codexタスク一覧">
+        <section class="composer" aria-label="メッセージ作成">
+          <div class="composer-title"><strong>Codexにメッセージを挿入</strong><span>入力すると直近の会話と作業状態まで照合します</span></div>
+          <textarea id="message" class="message-input" maxlength="10000" placeholder="例：Quick Shareの許可フローを直して"></textarea>
+          <div class="candidate-header"><strong>送信先セッション</strong><span id="candidate-note">最近のやり取り順に表示</span></div>
+          <div id="candidate-list" class="candidate-list"><div class="empty-state">Codexのタスク一覧を取得すると候補が表示されます。</div></div>
+          <div class="composer-footer">
+            <div class="keyboard-hint"><kbd>↑</kbd><kbd>↓</kbd> 候補を選択　<kbd>⌘</kbd><kbd>Enter</kbd> 送信</div>
+            <div id="message-status" class="message-status" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+
+      </section>
+    </main>
+
+    <script src="./ranking.js"></script>
+    <script>
+      const state = { threads: [], message: "", selectedId: "", defaultTarget: null, loading: false, error: "", prediction: { status: "idle", rankedIds: [], confidence: 0, reason: "", contextSource: "metadata", contextError: "" } };
+      let predictionTimer = null;
+      let predictionRequest = 0;
+      const $ = selector => document.querySelector(selector);
+      const candidateList = $("#candidate-list");
+      const messageInput = $("#message");
+      const messageStatus = $("#message-status");
+
+      function escapeHtml(value) {
+        return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+      }
+
+      function formatRelative(seconds) {
+        if (!seconds) return "—";
+        const delta = Math.max(0, Math.floor(Date.now() / 1000 - seconds));
+        if (delta < 60) return "たった今";
+        if (delta < 3600) return `${Math.floor(delta / 60)}分前`;
+        if (delta < 86_400) return `${Math.floor(delta / 3600)}時間前`;
+        if (delta < 604_800) return `${Math.floor(delta / 86_400)}日前`;
+        return new Date(seconds * 1000).toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
+      }
+
+      function setSync(status, label) {
+        $("#sync-dot").className = `sync-dot ${status === "loading" ? "loading" : status === "error" ? "error" : ""}`;
+        $("#sync-label").textContent = label;
+      }
+
+      function localCandidateThreads() {
+        return CodexRanking.rankThreads(state.threads, state.message, state.threads.length);
+      }
+
+      function modelCandidateThreads() {
+        const byId = new Map(state.threads.map(thread => [thread.id, thread]));
+        return state.prediction.rankedIds.map(id => byId.get(id)).filter(Boolean);
+      }
+
+      function candidateThreadsForDisplay() {
+        if ((state.prediction.status === "ready" || state.prediction.status === "loading") && state.prediction.rankedIds.length) {
+          return modelCandidateThreads();
+        }
+        return localCandidateThreads();
+      }
+
+      function renderCandidates() {
+        const matchingThreads = candidateThreadsForDisplay();
+        const candidates = matchingThreads.slice(0, 100);
+        const candidateNote = $("#candidate-note");
+        candidateNote.className = "";
+        candidateNote.title = "";
+        const hasRetainedModelResult = state.prediction.rankedIds.length > 0 && state.prediction.status === "loading";
+        if (state.loading) {
+          candidateNote.textContent = "Codexの作業中セッションを取得中…";
+          candidateNote.className = "prediction-loading";
+        } else if (!state.message.trim()) {
+          candidateNote.textContent = `${matchingThreads.length}件・最近のやり取り順に表示`;
+        } else if (state.prediction.status === "loading") {
+          candidateNote.textContent = hasRetainedModelResult
+            ? "前回のCodex判定を表示中・新しい入力を判定中…"
+            : `文字一致で${matchingThreads.length}件・Codexが会話文脈込みで判定中…`;
+          candidateNote.className = "prediction-loading";
+        } else if (state.prediction.status === "ready") {
+          const confidence = state.prediction.confidence >= 0.01 ? `・確信度 ${Math.round(state.prediction.confidence * 100)}%` : "";
+          const semanticCount = state.prediction.rankedIds.filter(id => state.threads.some(thread => thread.id === id)).length;
+          const contextLabel = state.prediction.contextSource === "thread" ? "会話文脈込み" : state.prediction.contextSource === "partial" ? "一部会話文脈込み" : "一覧情報のみ";
+          candidateNote.textContent = `Codex推定（${contextLabel}） ${Math.min(semanticCount, matchingThreads.length)}件${confidence}`;
+          candidateNote.className = "prediction-ready";
+          candidateNote.title = state.prediction.reason;
+        } else if (state.prediction.status === "error") {
+          candidateNote.textContent = `文字一致で${matchingThreads.length}件にフォールバック`;
+          candidateNote.className = "prediction-error";
+          candidateNote.title = state.prediction.reason;
+        } else {
+          candidateNote.textContent = `文字一致で${matchingThreads.length}件・Codex判定待ち`;
+        }
+        if (!candidates.length) {
+          const message = state.error
+            ? state.error
+            : state.prediction.status === "ready"
+              ? "Codexが候補を返しませんでした。入力を調整してください。"
+              : state.message.trim()
+                ? "文字一致する送信先セッションがありません。"
+                : "送信可能なセッションがありません。";
+          candidateList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+          return;
+        }
+        candidateList.innerHTML = candidates.map((thread, index) => `
+          <button class="candidate ${thread.id === state.selectedId ? "selected" : ""}" type="button" data-candidate-id="${escapeHtml(thread.id)}">
+            <span class="candidate-arrow">${thread.id === state.selectedId ? "›" : ""}</span>
+            <span class="candidate-info"><span class="candidate-main"><span class="candidate-project">${escapeHtml(thread.project)}</span><span class="candidate-separator">/</span><span class="candidate-name">${escapeHtml(thread.name)}</span></span><span class="candidate-sub">${escapeHtml(thread.statusLabel)} · 最終やり取り ${formatRelative(thread.updatedAt)}${state.message.trim() && index === 0 ? state.prediction.status === "ready" ? " · Codex推定トップ" : state.prediction.status === "loading" && hasRetainedModelResult ? " · 前回のCodex推定トップ" : " · 文字フィルタトップ" : ""}</span></span>
+            <span class="candidate-send">↵ 挿入</span>
+          </button>`).join("");
+        candidateList.querySelectorAll("[data-candidate-id]").forEach(row => row.addEventListener("click", event => {
+          const id = row.dataset.candidateId;
+          selectThread(id);
+          if (event.target.closest(".candidate-send")) sendMessage(id);
+        }));
+      }
+
+      function render() {
+        renderCandidates();
+      }
+
+      function selectThread(id) {
+        state.selectedId = id;
+        messageStatus.textContent = "";
+        messageStatus.className = "message-status";
+        render();
+      }
+
+      function schedulePrediction() {
+        if (predictionTimer) clearTimeout(predictionTimer);
+        const request = ++predictionRequest;
+        const message = state.message.trim();
+        if (!message) {
+          state.prediction = { status: "idle", rankedIds: [], confidence: 0, reason: "", contextSource: "metadata", contextError: "" };
+          renderCandidates();
+          return;
+        }
+        const previousPrediction = state.prediction;
+        const hasPriorModelResult = (previousPrediction.status === "ready" || previousPrediction.status === "loading") && previousPrediction.rankedIds.length > 0;
+        state.prediction = hasPriorModelResult
+          ? { ...previousPrediction, status: "loading" }
+          : { status: "loading", rankedIds: [], confidence: 0, reason: "", contextSource: "metadata", contextError: "" };
+        renderCandidates();
+        predictionTimer = setTimeout(async () => {
+          predictionTimer = null;
+          try {
+            const result = await window.bridge.predictTarget({ message });
+            if (request !== predictionRequest) return;
+            state.prediction = {
+              status: "ready",
+              rankedIds: Array.isArray(result?.rankedIds) ? result.rankedIds : [],
+              confidence: Number(result?.confidence) || 0,
+              reason: typeof result?.reason === "string" ? result.reason : "",
+              contextSource: typeof result?.contextSource === "string" ? result.contextSource : "metadata",
+              contextError: typeof result?.contextError === "string" ? result.contextError : "",
+            };
+            const predictedId = state.prediction.rankedIds[0];
+            if (predictedId && state.threads.some(thread => thread.id === predictedId)) state.selectedId = predictedId;
+            render();
+          } catch (error) {
+            if (request !== predictionRequest) return;
+            state.prediction = { status: "error", rankedIds: [], confidence: 0, reason: error.message, contextSource: "metadata", contextError: "" };
+            renderCandidates();
+          }
+        }, 450);
+      }
+
+      async function loadThreads() {
+        state.loading = true;
+        state.error = "";
+        setSync("loading", "同期中…");
+        render();
+        try {
+          const threads = await window.bridge.listThreads();
+          state.threads = Array.isArray(threads) ? threads : [];
+          const preferred = state.defaultTarget?.thread && state.threads.find(thread => thread.id === state.defaultTarget.thread);
+          if (preferred) state.selectedId = preferred.id;
+          else if (!state.selectedId || !state.threads.some(thread => thread.id === state.selectedId)) state.selectedId = state.threads[0]?.id || "";
+          state.loading = false;
+          setSync("ready", `最終同期 ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`);
+        } catch (error) {
+          state.loading = false;
+          state.error = `Codexの作業中リストを取得できませんでした: ${error.message}`;
+          setSync("error", "同期エラー");
+        }
+        render();
+      }
+
+      async function sendMessage(id) {
+        const message = messageInput.value.trim();
+        const target = state.threads.find(thread => thread.id === id);
+        if (!message) {
+          messageStatus.textContent = "メッセージを入力してください。";
+          messageStatus.className = "message-status error";
+          messageInput.focus();
+          return;
+        }
+        if (!target) return;
+        messageStatus.textContent = `${target.name} へ挿入中…`;
+        messageStatus.className = "message-status";
+        try {
+          await window.bridge.queueToCodex({ thread: target.id, message });
+          messageInput.value = "";
+          state.message = "";
+          predictionRequest += 1;
+          if (predictionTimer) clearTimeout(predictionTimer);
+          state.prediction = { status: "idle", rankedIds: [], confidence: 0, reason: "", contextSource: "metadata", contextError: "" };
+          state.selectedId = target.id;
+          messageStatus.textContent = `「${target.name}」にチャットを挿入しました。`;
+          messageStatus.className = "message-status success";
+          renderCandidates();
+        } catch (error) {
+          messageStatus.textContent = `挿入失敗: ${error.message}`;
+          messageStatus.className = "message-status error";
+        }
+      }
+
+      $("#refresh").addEventListener("click", loadThreads);
+      messageInput.addEventListener("input", event => {
+        const nextMessage = event.target.value;
+        state.message = nextMessage;
+        const hasPriorModelResult = (state.prediction.status === "ready" || state.prediction.status === "loading") && state.prediction.rankedIds.length > 0;
+        if (state.message.trim() && !hasPriorModelResult) {
+          const matchingThreads = localCandidateThreads();
+          state.selectedId = matchingThreads[0]?.id || "";
+        }
+        schedulePrediction();
+        render();
+      });
+      messageInput.addEventListener("keydown", event => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          const candidates = candidateThreadsForDisplay().slice(0, 100);
+          if (!candidates.length) return;
+          event.preventDefault();
+          const currentIndex = candidates.findIndex(thread => thread.id === state.selectedId);
+          const direction = event.key === "ArrowDown" ? 1 : -1;
+          const nextIndex = currentIndex < 0 ? 0 : (currentIndex + direction + candidates.length) % candidates.length;
+          selectThread(candidates[nextIndex].id);
+          return;
+        }
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          event.preventDefault();
+          const target = state.selectedId || candidateThreadsForDisplay()[0]?.id;
+          if (target) sendMessage(target);
+        }
+      });
+
+      async function initialize() {
+        try {
+          state.defaultTarget = await window.bridge.getDefaultTarget();
+        } catch {
+          state.defaultTarget = null;
+        }
+        await loadThreads();
+      }
+
+      initialize();
+    </script>
+  </body>
+</html>
