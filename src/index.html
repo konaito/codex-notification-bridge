@@ -49,6 +49,8 @@
       .composer-title { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 11px; }
       .composer-title strong { color: #4a5569; font-size: 13px; font-weight: 750; letter-spacing: .01em; }
       .composer-title span { color: var(--quiet); font-size: 11px; text-align: right; }
+      .composer-title span.shortcut-note { color: #687386; }
+      .composer-title span.shortcut-note.unavailable { color: #bd5d70; }
       .message-input { display: block; width: 100%; min-height: 132px; padding: 16px 17px; border: 1px solid #bcc7d7; border-radius: 8px; outline: none; resize: vertical; background: #fff; color: #252d3c; box-shadow: 0 1px 0 rgba(35, 47, 66, .03); font-size: 16px; line-height: 1.65; transition: border-color .16s ease, box-shadow .16s ease; }
       .message-input::placeholder { color: #aab4c3; }
       .message-input:focus { border-color: #8c9fea; box-shadow: 0 0 0 3px rgba(82, 104, 213, .13); }
@@ -126,7 +128,7 @@
 
       <section class="dashboard" aria-label="Codexタスク一覧">
         <section class="composer" aria-label="メッセージ作成">
-          <div class="composer-title"><strong>メッセージ</strong><span>入力すると送信先を自動判定します</span></div>
+          <div class="composer-title"><strong>メッセージ</strong><span id="shortcut-note" class="shortcut-note">左⌘を0.5秒長押しで入力欄にフォーカス</span></div>
           <textarea id="message" class="message-input" maxlength="10000" placeholder="例：Quick Shareの許可フローを直して"></textarea>
           <div class="candidate-header"><strong>送信先セッション</strong><span id="candidate-note">最近のやり取り順に表示</span></div>
           <div id="candidate-list" class="candidate-list"><div class="empty-state">Codexのタスク一覧を取得すると候補が表示されます。</div></div>
@@ -148,6 +150,24 @@
       const candidateList = $("#candidate-list");
       const messageInput = $("#message");
       const messageStatus = $("#message-status");
+      const shortcutNote = $("#shortcut-note");
+
+      function setShortcutStatus(status) {
+        if (status?.available) {
+          shortcutNote.textContent = "左⌘を0.5秒長押しで入力欄にフォーカス";
+          shortcutNote.className = "shortcut-note";
+        } else if (status?.message) {
+          shortcutNote.textContent = status.message;
+          shortcutNote.className = "shortcut-note unavailable";
+        }
+      }
+
+      window.bridge.onFocusComposer(() => {
+        messageInput.focus({ preventScroll: true });
+        const cursor = messageInput.value.length;
+        messageInput.setSelectionRange(cursor, cursor);
+      });
+      window.bridge.onShortcutStatus(setShortcutStatus);
 
       function escapeHtml(value) {
         return String(value || "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
