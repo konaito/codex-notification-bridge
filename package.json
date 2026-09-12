@@ -10,6 +10,19 @@
     "test": "node --test",
     "benchmark": "node scripts/benchmark-routing.js"
   },
+  "build": {
+    "appId": "com.konaito.codex-notification-bridge",
+    "productName": "Codex Notification Bridge",
+    "mac": {
+      "icon": "assets/codex-notification-bridge.icns"
+    },
+    "win": {
+      "icon": "assets/codex-notification-bridge.png"
+    },
+    "linux": {
+      "icon": "assets/codex-notification-bridge.png"
+    }
+  },
   "devDependencies": {
     "electron": "^38.0.0"
   },
