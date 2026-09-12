@@ -59,8 +59,10 @@ function ensureThreadContexts() {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 720,
-    height: 520,
+    width: 820,
+    height: 700,
+    minWidth: 620,
+    minHeight: 520,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
