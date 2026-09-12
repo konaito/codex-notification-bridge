@@ -26,11 +26,12 @@
       button, input, textarea { font: inherit; }
       button { border: 0; }
       .app-window { min-height: 100vh; background: #f1f3f5; }
-      .app-header { padding: 20px 32px 21px; border-bottom: 1px solid var(--line); background: var(--paper); }
-      .header-top { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 24px; }
+      .app-header { padding: 14px 28px 15px; border-bottom: 1px solid var(--line); background: var(--paper); }
+      .header-top { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 20px; }
       .header-copy { min-width: 0; }
+      .header-title { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
       .header-actions { display: flex; align-items: center; gap: 10px; }
-      .header-actions { padding-top: 2px; }
+      .header-actions { padding-top: 0; }
       .sync-state { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--muted); font-size: 11px; }
       .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #40ad78; }
       .sync-dot.loading { background: #d99532; animation: pulse 1s infinite alternate; }
@@ -38,9 +39,9 @@
       @keyframes pulse { to { opacity: .35; } }
       .icon-button { display: inline-grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #657187; cursor: pointer; transition: .16s ease; }
       .icon-button:hover { border-color: #a6b4ee; color: var(--accent); background: #f7f8ff; }
-      .eyebrow { margin: 0 0 7px; color: #687386; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; letter-spacing: .13em; }
-      h1 { margin: 0; color: var(--ink); font-size: clamp(30px, 3.4vw, 40px); line-height: 1; letter-spacing: -.05em; }
-      .subtitle { max-width: 730px; margin: 7px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+      .eyebrow { margin: 0; color: #687386; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+      h1 { margin: 0; color: var(--ink); font-size: clamp(27px, 3vw, 32px); line-height: 1; letter-spacing: -.045em; }
+      .subtitle { max-width: 730px; margin: 5px 0 0 58px; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
       .dashboard { width: min(960px, calc(100vw - 64px)); margin: 0 auto; padding: 24px 0 44px; }
       .empty-state, .error-state { padding: 34px 20px; color: var(--quiet); text-align: center; font-size: 13px; line-height: 1.6; }
       .error-state { color: #bd5d70; }
@@ -81,13 +82,14 @@
       .message-status { min-height: 18px; color: #6f7b8f; font-size: 11px; text-align: right; }
       .message-status.success { color: #39875a; }
       .message-status.error { color: #bd5d70; }
-      @media (max-width: 640px) {
+      @media (max-width: 540px) {
         .app-header { padding-right: 20px; padding-left: 20px; }
         .header-top { flex-direction: column; gap: 14px; }
         .header-actions { padding-top: 0; }
         .dashboard { width: calc(100vw - 40px); }
         .composer-title { align-items: flex-start; gap: 5px; }
         .composer-title span { text-align: left; }
+        .subtitle { margin-left: 0; }
         .candidate-project { max-width: 28%; }
         .candidate-send { padding-left: 8px; }
         .composer-footer { align-items: flex-start; flex-direction: column; gap: 5px; }
@@ -95,7 +97,7 @@
       }
       @media (max-height: 620px) {
         .app-header { padding-top: 12px; padding-bottom: 15px; }
-        h1 { font-size: 30px; }
+        h1 { font-size: 28px; }
         .subtitle { margin-top: 6px; font-size: 12px; }
         .dashboard { padding-top: 20px; padding-bottom: 28px; }
         .message-input { min-height: 100px; }
@@ -109,15 +111,17 @@
         <header class="app-header">
         <div class="header-top">
           <div class="header-copy">
-            <p class="eyebrow">CODEX</p>
-            <h1>作業中のセッション</h1>
+            <div class="header-title">
+              <p class="eyebrow">CODEX</p>
+              <h1>作業中のセッション</h1>
+            </div>
+            <p class="subtitle">入力したメッセージを、直近の会話と作業状態まで含めて最適なCodexタスクへ送ります。</p>
           </div>
           <div class="header-actions">
             <span class="sync-state"><i id="sync-dot" class="sync-dot"></i><span id="sync-label">接続準備中</span></span>
             <button id="refresh" class="icon-button" type="button" aria-label="タスク一覧を更新" title="タスク一覧を更新">↻</button>
           </div>
         </div>
-        <p class="subtitle">入力したメッセージを、直近の会話と作業状態まで含めて最適なCodexタスクへ送ります。</p>
       </header>
 
       <section class="dashboard" aria-label="Codexタスク一覧">
