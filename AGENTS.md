@@ -8,17 +8,20 @@ that message into the selected task chat.
 
 The user-facing contract is:
 
-- Show one flat `送信先セッション` list. Do not split it into a session list
-  and a candidate list.
-- Keep the message textarea above the list. Empty input shows all sendable
-  sessions ordered by the most recent human or AI interaction.
+- Show one flat work list. When input is empty, label it `いまの作業`; while
+  typing, label the same list `送り先候補`. Do not split it into a session
+  list and a candidate list.
+- Keep the free-form textarea above the list. Empty input shows all sendable
+  sessions ordered by the most recent human or AI interaction, with the task
+  preview as a compact current-work clue. Do not require a task choice before
+  the user starts typing.
 - While typing, use local text matching for immediate filtering and sorting.
 - After the first Codex prediction completes, show only the Codex-ranked
   sessions. While a later prediction is running, keep the previous Codex
   result visible instead of falling back to local matches.
 - If the textarea becomes empty, reset the retained-prediction guard. The next
   message starts again with local matching.
-- Selecting a row and clicking `↵ 挿入`, or pressing `⌘/Ctrl + Enter`, inserts
+- Selecting a row and clicking `↵ 送る`, or pressing `⌘/Ctrl + Enter`, inserts
   the message into that task.
 
 ## Repository map

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Codex | 作業中のセッション</title>
+    <title>Codex | 入力</title>
     <style>
       :root {
         color-scheme: light;
@@ -26,7 +26,7 @@
       button, input, textarea { font: inherit; }
       button { border: 0; }
       .app-window { min-height: 100vh; background: #f1f3f5; }
-      .app-header { padding: 14px 28px 15px; border-bottom: 1px solid var(--line); background: var(--paper); }
+      .app-header { padding: 17px 28px 16px; border-bottom: 1px solid var(--line); background: var(--paper); }
       .header-top { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 20px; }
       .header-copy { min-width: 0; }
       .header-title { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
@@ -41,7 +41,6 @@
       .icon-button:hover { border-color: #a6b4ee; color: var(--accent); background: #f7f8ff; }
       .eyebrow { margin: 0; color: #687386; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; letter-spacing: .13em; }
       h1 { margin: 0; color: var(--ink); font-size: clamp(27px, 3vw, 32px); line-height: 1; letter-spacing: -.045em; }
-      .subtitle { max-width: 730px; margin: 5px 0 0 58px; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
       .dashboard { width: min(960px, calc(100vw - 64px)); margin: 0 auto; padding: 24px 0 44px; }
       .empty-state, .error-state { padding: 34px 20px; color: var(--quiet); text-align: center; font-size: 13px; line-height: 1.6; }
       .error-state { color: #bd5d70; }
@@ -54,17 +53,26 @@
       .message-input { display: block; width: 100%; min-height: 132px; padding: 16px 17px; border: 1px solid #bcc7d7; border-radius: 8px; outline: none; resize: vertical; background: #fff; color: #252d3c; box-shadow: 0 1px 0 rgba(35, 47, 66, .03); font-size: 16px; line-height: 1.65; transition: border-color .16s ease, box-shadow .16s ease; }
       .message-input::placeholder { color: #aab4c3; }
       .message-input:focus { border-color: #8c9fea; box-shadow: 0 0 0 3px rgba(82, 104, 213, .13); }
-      .candidate-header { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 16px; margin: 29px 0 0; padding: 0 0 10px; border-bottom: 1px solid var(--line); }
+      .route-state { display: flex; min-width: 0; align-items: baseline; gap: 8px; min-height: 20px; margin-top: 11px; color: #6d7890; font-size: 11px; }
+      .route-state.empty { visibility: hidden; }
+      .route-state.pending { color: #a9701f; }
+      .route-state.ready { color: var(--accent); }
+      .route-state.error { color: #bd5d70; }
+      .route-arrow { flex: 0 0 auto; color: currentColor; font-size: 15px; line-height: 1; }
+      .route-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .route-note { overflow: hidden; color: var(--quiet); text-overflow: ellipsis; white-space: nowrap; }
+      .route-state.ready .route-note { color: #7e8be1; }
+      .candidate-header { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 16px; margin: 24px 0 0; padding: 0 0 10px; border-bottom: 1px solid var(--line); }
       .candidate-header strong { display: inline-flex; align-items: center; gap: 9px; color: #4a5569; font-size: 14px; font-weight: 750; letter-spacing: -.01em; }
       .candidate-header strong::before { width: 3px; height: 15px; background: var(--accent); content: ""; }
       .candidate-header span { overflow: hidden; color: var(--quiet); text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
       .candidate-header span.prediction-loading { color: #a9701f; }
       .candidate-header span.prediction-ready { color: var(--accent); }
       .candidate-header span.prediction-error { color: #bd5d70; }
-      .candidate-list { display: grid; max-height: 430px; gap: 0; overflow-y: auto; border-bottom: 1px solid var(--line); scrollbar-color: #c5ccda transparent; scrollbar-width: thin; }
+      .candidate-list { display: grid; grid-template-columns: minmax(0, 1fr); max-height: 430px; gap: 0; overflow-y: auto; border-bottom: 1px solid var(--line); scrollbar-color: #c5ccda transparent; scrollbar-width: thin; }
       .candidate-list::-webkit-scrollbar { width: 8px; }
       .candidate-list::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 10px; background: #c5ccda; background-clip: padding-box; }
-      .candidate { display: flex; width: 100%; align-items: center; gap: 12px; padding: 14px 8px 14px 5px; border: 0; border-bottom: 1px solid var(--line-soft); border-left: 3px solid transparent; border-radius: 0; background: transparent; color: #303949; text-align: left; cursor: pointer; transition: background .14s ease, border-color .14s ease; }
+      .candidate { display: flex; width: 100%; min-width: 0; align-items: center; gap: 12px; padding: 14px 8px 14px 5px; border: 0; border-bottom: 1px solid var(--line-soft); border-left: 3px solid transparent; border-radius: 0; background: transparent; color: #303949; text-align: left; cursor: pointer; transition: background .14s ease, border-color .14s ease; }
       .candidate:last-child { border-bottom: 0; }
       .candidate:hover { background: #f8f9fb; }
       .candidate.selected { border-left-color: var(--accent); background: var(--accent-soft); }
@@ -74,7 +82,8 @@
       .candidate-project { overflow: hidden; max-width: 34%; color: #687386; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; }
       .candidate-separator { color: #b2bac7; }
       .candidate-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 680; letter-spacing: -.01em; }
-      .candidate-sub { margin-top: 4px; color: #98a3b4; font-size: 11px; }
+      .candidate-sub { display: flex; flex-wrap: wrap; gap: 0 7px; margin-top: 4px; color: #98a3b4; font-size: 11px; }
+      .candidate-preview { display: block; overflow: hidden; margin-top: 5px; color: #69758b; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; line-height: 1.35; }
       .candidate-send { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; padding: 8px 4px 8px 12px; color: var(--accent); font-size: 11px; font-weight: 750; }
       .candidate:hover .candidate-send { color: #3f55c4; }
       .candidate.selected .candidate-send { color: #4056c7; }
@@ -91,7 +100,6 @@
         .dashboard { width: calc(100vw - 40px); }
         .composer-title { align-items: flex-start; gap: 5px; }
         .composer-title span { text-align: left; }
-        .subtitle { margin-left: 0; }
         .candidate-project { max-width: 28%; }
         .candidate-send { padding-left: 8px; }
         .composer-footer { align-items: flex-start; flex-direction: column; gap: 5px; }
@@ -110,14 +118,13 @@
   </head>
   <body>
     <main class="app-window">
-        <header class="app-header">
+      <header class="app-header">
         <div class="header-top">
           <div class="header-copy">
             <div class="header-title">
               <p class="eyebrow">CODEX</p>
-              <h1>作業中のセッション</h1>
+              <h1>入力</h1>
             </div>
-            <p class="subtitle">入力したメッセージを、直近の会話と作業状態まで含めて最適なCodexタスクへ送ります。</p>
           </div>
           <div class="header-actions">
             <span class="sync-state"><i id="sync-dot" class="sync-dot"></i><span id="sync-label">接続準備中</span></span>
@@ -126,12 +133,13 @@
         </div>
       </header>
 
-      <section class="dashboard" aria-label="Codexタスク一覧">
-        <section class="composer" aria-label="メッセージ作成">
-          <div class="composer-title"><strong>メッセージ</strong><span id="shortcut-note" class="shortcut-note">左⌘を0.5秒長押しで入力欄にフォーカス</span></div>
-          <textarea id="message" class="message-input" maxlength="10000" placeholder="例：Quick Shareの許可フローを直して"></textarea>
-          <div class="candidate-header"><strong>送信先セッション</strong><span id="candidate-note">最近のやり取り順に表示</span></div>
-          <div id="candidate-list" class="candidate-list"><div class="empty-state">Codexのタスク一覧を取得すると候補が表示されます。</div></div>
+      <section class="dashboard" aria-label="入力と進行中の作業">
+        <section class="composer" aria-label="入力">
+          <div class="composer-title"><strong>入力</strong><span id="shortcut-note" class="shortcut-note">左⌘長押しでフォーカス</span></div>
+          <textarea id="message" class="message-input" aria-label="入力" maxlength="10000" placeholder="そのまま…"></textarea>
+          <div id="route-state" class="route-state empty" aria-live="polite"><span class="route-arrow">→</span><span id="route-label" class="route-label"></span><span id="route-note" class="route-note"></span></div>
+          <div class="candidate-header"><strong id="candidate-heading">いまの作業</strong><span id="candidate-note">最近のやり取りが新しい順</span></div>
+          <div id="candidate-list" class="candidate-list"><div class="empty-state">同期中…</div></div>
           <div class="composer-footer">
             <div class="keyboard-hint"><kbd>↑</kbd><kbd>↓</kbd> 候補を選択　<kbd>⌘</kbd><kbd>Enter</kbd> 送信</div>
             <div id="message-status" class="message-status" role="status" aria-live="polite"></div>
@@ -151,10 +159,14 @@
       const messageInput = $("#message");
       const messageStatus = $("#message-status");
       const shortcutNote = $("#shortcut-note");
+      const candidateHeading = $("#candidate-heading");
+      const routeState = $("#route-state");
+      const routeLabel = $("#route-label");
+      const routeNote = $("#route-note");
 
       function setShortcutStatus(status) {
         if (status?.available) {
-          shortcutNote.textContent = "左⌘を0.5秒長押しで入力欄にフォーカス";
+          shortcutNote.textContent = "左⌘長押しでフォーカス";
           shortcutNote.className = "shortcut-note";
         } else if (status?.message) {
           shortcutNote.textContent = status.message;
@@ -188,6 +200,44 @@
         $("#sync-label").textContent = label;
       }
 
+      function compactPreview(value, limit = 120) {
+        const preview = String(value || "").replace(/\s+/g, " ").trim();
+        if (!preview) return "";
+        return preview.length > limit ? `${preview.slice(0, limit - 1)}…` : preview;
+      }
+
+      function renderRouteState() {
+        const message = state.message.trim();
+        const target = state.threads.find(thread => thread.id === state.selectedId);
+        routeState.className = "route-state";
+        if (!message) {
+          routeState.classList.add("empty");
+          routeLabel.textContent = "";
+          routeNote.textContent = "";
+          return;
+        }
+        if (!target) {
+          routeState.classList.add("error");
+          routeLabel.textContent = "送り先候補なし";
+          routeNote.textContent = "";
+          return;
+        }
+        routeLabel.textContent = target.name;
+        if (state.prediction.status === "ready") {
+          routeState.classList.add("ready");
+          routeNote.textContent = "文脈から選択";
+        } else if (state.prediction.status === "loading") {
+          routeState.classList.add("pending");
+          routeNote.textContent = "候補を更新中…";
+        } else if (state.prediction.status === "error") {
+          routeState.classList.add("error");
+          routeNote.textContent = "近い作業から選択";
+        } else {
+          routeState.classList.add("pending");
+          routeNote.textContent = "候補";
+        }
+      }
+
       function localCandidateThreads() {
         return CodexRanking.rankThreads(state.threads, state.message, state.threads.length);
       }
@@ -208,6 +258,7 @@
         const matchingThreads = candidateThreadsForDisplay();
         const candidates = matchingThreads.slice(0, 100);
         const candidateNote = $("#candidate-note");
+        candidateHeading.textContent = state.message.trim() ? "送り先候補" : "いまの作業";
         candidateNote.className = "";
         candidateNote.title = "";
         const hasRetainedModelResult = state.prediction.rankedIds.length > 0 && state.prediction.status === "loading";
@@ -215,25 +266,25 @@
           candidateNote.textContent = "Codexの作業中セッションを取得中…";
           candidateNote.className = "prediction-loading";
         } else if (!state.message.trim()) {
-          candidateNote.textContent = `${matchingThreads.length}件・最近のやり取り順に表示`;
+          candidateNote.textContent = `${matchingThreads.length}件・最近のやり取りが新しい順`;
         } else if (state.prediction.status === "loading") {
           candidateNote.textContent = hasRetainedModelResult
-            ? "前回のCodex判定を表示中・新しい入力を判定中…"
-            : `文字一致で${matchingThreads.length}件・Codexが会話文脈込みで判定中…`;
+            ? "候補を保持・入力を再判定中…"
+            : "入力をもとに候補を判定中…";
           candidateNote.className = "prediction-loading";
         } else if (state.prediction.status === "ready") {
           const confidence = state.prediction.confidence >= 0.01 ? `・確信度 ${Math.round(state.prediction.confidence * 100)}%` : "";
           const semanticCount = state.prediction.rankedIds.filter(id => state.threads.some(thread => thread.id === id)).length;
           const contextLabel = state.prediction.contextSource === "thread" ? "会話文脈込み" : state.prediction.contextSource === "partial" ? "一部会話文脈込み" : "一覧情報のみ";
-          candidateNote.textContent = `Codex推定（${contextLabel}） ${Math.min(semanticCount, matchingThreads.length)}件${confidence}`;
+          candidateNote.textContent = `${contextLabel}・${Math.min(semanticCount, matchingThreads.length)}件${confidence}`;
           candidateNote.className = "prediction-ready";
           candidateNote.title = state.prediction.reason;
         } else if (state.prediction.status === "error") {
-          candidateNote.textContent = `文字一致で${matchingThreads.length}件にフォールバック`;
+          candidateNote.textContent = `${matchingThreads.length}件・近い作業から表示`;
           candidateNote.className = "prediction-error";
           candidateNote.title = state.prediction.reason;
         } else {
-          candidateNote.textContent = `文字一致で${matchingThreads.length}件・Codex判定待ち`;
+          candidateNote.textContent = `${matchingThreads.length}件・入力に合わせて更新`;
         }
         if (!candidates.length) {
           const message = state.error
@@ -241,17 +292,20 @@
             : state.prediction.status === "ready"
               ? "Codexが候補を返しませんでした。入力を調整してください。"
               : state.message.trim()
-                ? "文字一致する送信先セッションがありません。"
-                : "送信可能なセッションがありません。";
+                ? "候補なし"
+                : "進行中の作業はありません。";
           candidateList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
           return;
         }
-        candidateList.innerHTML = candidates.map((thread, index) => `
+        candidateList.innerHTML = candidates.map((thread, index) => {
+          const preview = compactPreview(thread.preview);
+          return `
           <button class="candidate ${thread.id === state.selectedId ? "selected" : ""}" type="button" data-candidate-id="${escapeHtml(thread.id)}">
             <span class="candidate-arrow">${thread.id === state.selectedId ? "›" : ""}</span>
-            <span class="candidate-info"><span class="candidate-main"><span class="candidate-project">${escapeHtml(thread.project)}</span><span class="candidate-separator">/</span><span class="candidate-name">${escapeHtml(thread.name)}</span></span><span class="candidate-sub">${escapeHtml(thread.statusLabel)} · 最終やり取り ${formatRelative(thread.updatedAt)}${state.message.trim() && index === 0 ? state.prediction.status === "ready" ? " · Codex推定トップ" : state.prediction.status === "loading" && hasRetainedModelResult ? " · 前回のCodex推定トップ" : " · 文字フィルタトップ" : ""}</span></span>
-            <span class="candidate-send">↵ 挿入</span>
-          </button>`).join("");
+            <span class="candidate-info"><span class="candidate-main"><span class="candidate-project">${escapeHtml(thread.project)}</span><span class="candidate-separator">/</span><span class="candidate-name">${escapeHtml(thread.name)}</span></span><span class="candidate-sub"><span>${escapeHtml(thread.statusLabel)}</span><span>最終 ${formatRelative(thread.updatedAt)}</span>${state.message.trim() && index === 0 ? `<span>${state.prediction.status === "ready" ? "候補トップ" : state.prediction.status === "loading" && hasRetainedModelResult ? "前回の候補トップ" : "入力に近い"}</span>` : ""}</span>${preview ? `<span class="candidate-preview">${escapeHtml(preview)}</span>` : ""}</span>
+            <span class="candidate-send">↵ 送る</span>
+          </button>`;
+        }).join("");
         candidateList.querySelectorAll("[data-candidate-id]").forEach(row => row.addEventListener("click", event => {
           const id = row.dataset.candidateId;
           selectThread(id);
@@ -261,6 +315,7 @@
 
       function render() {
         renderCandidates();
+        renderRouteState();
       }
 
       function selectThread(id) {
@@ -334,13 +389,13 @@
         const message = messageInput.value.trim();
         const target = state.threads.find(thread => thread.id === id);
         if (!message) {
-          messageStatus.textContent = "メッセージを入力してください。";
+          messageStatus.textContent = "入力がありません。";
           messageStatus.className = "message-status error";
           messageInput.focus();
           return;
         }
         if (!target) return;
-        messageStatus.textContent = `${target.name} へ挿入中…`;
+        messageStatus.textContent = `${target.name} へ送信中…`;
         messageStatus.className = "message-status";
         try {
           await window.bridge.queueToCodex({ thread: target.id, message });
@@ -350,11 +405,11 @@
           if (predictionTimer) clearTimeout(predictionTimer);
           state.prediction = { status: "idle", rankedIds: [], confidence: 0, reason: "", contextSource: "metadata", contextError: "" };
           state.selectedId = target.id;
-          messageStatus.textContent = `「${target.name}」にチャットを挿入しました。`;
+          messageStatus.textContent = `「${target.name}」へ送りました。`;
           messageStatus.className = "message-status success";
           renderCandidates();
         } catch (error) {
-          messageStatus.textContent = `挿入失敗: ${error.message}`;
+          messageStatus.textContent = `送信失敗: ${error.message}`;
           messageStatus.className = "message-status error";
         }
       }
