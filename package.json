@@ -1,0 +1,19 @@
+{
+  "name": "codex-notification-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron bridge for predicting and inserting messages into Codex task chats.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/validation.js && node --check src/codex.js && node --check src/target.js && node --check src/codex-server.js && node --check src/thread-list.js && node --check src/thread-context.js && node --check src/ranking.js && node --check src/orchestration.js && node --check src/codex-predict.js && node --check scripts/benchmark-routing.js",
+    "test": "node --test",
+    "benchmark": "node scripts/benchmark-routing.js"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  },
+  "allowScripts": {
+    "electron": true
+  }
+}
