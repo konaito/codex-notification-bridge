@@ -10,6 +10,8 @@ const { extractThreadContext } = require("./thread-context");
 const { markConfiguredTarget, normalizeThread } = require("./thread-list");
 const { getConfiguredTarget } = require("./target");
 
+const APP_ICON_PATH = path.join(__dirname, "../assets/codex-notification-bridge.png");
+
 let currentThreads = [];
 let activePrediction = null;
 let threadContextPromise = null;
@@ -89,6 +91,7 @@ function createWindow() {
     height: 700,
     minWidth: 620,
     minHeight: 520,
+    icon: APP_ICON_PATH,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -166,6 +169,7 @@ const commandPressRecognizer = createLongPressRecognizer({
 });
 
 app.whenReady().then(() => {
+  if (process.platform === "darwin" && app.dock?.setIcon) app.dock.setIcon(APP_ICON_PATH);
   ipcMain.handle("codex:queue", async (_event, payload) => {
     const result = await queueToCodex(payload);
     invalidateThreadContext();
