@@ -9,7 +9,9 @@
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/command-long-press.js && node --check src/validation.js && node --check src/codex.js && node --check src/target.js && node --check src/codex-server.js && node --check src/thread-list.js && node --check src/thread-context.js && node --check src/ranking.js && node --check src/orchestration.js && node --check src/codex-predict.js && node --check scripts/benchmark-routing.js",
     "test": "node --test",
     "benchmark": "node scripts/benchmark-routing.js",
-    "package:mac": "electron-packager . \"Codex Notification Bridge\" --platform=darwin --arch=arm64 --out=dist --overwrite --asar --app-bundle-id=com.konaito.codex-notification-bridge --app-version=0.1.1 --ignore='^/dist($|/)'"
+    "package:mac": "npm run package:mac:arm64",
+    "package:mac:arm64": "electron-packager . \"Codex Notification Bridge\" --platform=darwin --arch=arm64 --out=dist --overwrite --asar --app-bundle-id=com.konaito.codex-notification-bridge --app-version=\"$npm_package_version\" --ignore='^/dist($|/)'",
+    "package:mac:x64": "electron-packager . \"Codex Notification Bridge\" --platform=darwin --arch=x64 --out=dist --overwrite --asar --app-bundle-id=com.konaito.codex-notification-bridge --app-version=\"$npm_package_version\" --ignore='^/dist($|/)'"
   },
   "build": {
     "appId": "com.konaito.codex-notification-bridge",
