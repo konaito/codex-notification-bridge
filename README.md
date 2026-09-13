@@ -23,7 +23,7 @@ npm start
 
 ## ダウンロード
 
-`main`へ変更が入るたびに、GitHub ActionsがmacOS版（Apple Silicon / Intel）をビルドし、GitHub Releasesへ公開します。常に最新のビルドを取得する場合は、次のLPを開いてください。
+`main`へ変更が入るたびに、GitHub ActionsがApple Silicon版macOSアプリをDMGとしてビルドし、GitHub Releasesへ公開します。常に最新のビルドを取得する場合は、次のLPを開いてください。
 
 - [Codex Notification Bridge — ダウンロードLP](https://konaito.github.io/codex-notification-bridge/)
 
