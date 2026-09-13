@@ -21,6 +21,14 @@ npm install
 npm start
 ```
 
+## ダウンロード
+
+`main`へ変更が入るたびに、GitHub ActionsがmacOS版（Apple Silicon / Intel）をビルドし、GitHub Releasesへ公開します。常に最新のビルドを取得する場合は、次のLPを開いてください。
+
+- [Codex Notification Bridge — ダウンロードLP](https://konaito.github.io/codex-notification-bridge/)
+
+配布物は現時点では署名・公証を行っていないため、macOSの初回起動時に確認が表示される場合があります。
+
 `codex`がPATHにない場合は、実行ファイルを指定します。
 
 ```bash
@@ -151,4 +159,4 @@ src/
 
 - Webhook、macOS通知、ローカルHTTPなどの通知受信
 - 送信後の履歴保存・重複排除
-- 配布用パッケージングや自動アップデート
+- アプリ起動後の自動アップデート（配布用パッケージの自動ビルド・公開はGitHub Actionsで実装済み）

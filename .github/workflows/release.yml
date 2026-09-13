@@ -1,0 +1,114 @@
+name: Build and publish main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Check and test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run syntax checks
+        run: npm run check
+
+      - name: Run tests
+        run: npm test
+
+  package:
+    name: Package macOS ${{ matrix.arch }}
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - arm64
+          - x64
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package application
+        run: npm run package:mac:${{ matrix.arch }}
+
+      - name: Create distributable archive
+        shell: bash
+        run: |
+          mkdir -p release
+          app_path="dist/Codex Notification Bridge-darwin-${{ matrix.arch }}/Codex Notification Bridge.app"
+          archive="release/Codex-Notification-Bridge-macOS-${{ matrix.arch }}.zip"
+          test -d "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "$archive"
+
+      - name: Upload packaged application
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: release/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: github.ref == 'refs/heads/main'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged applications
+        uses: actions/download-artifact@v4
+        with:
+          pattern: macos-*
+          merge-multiple: true
+          path: release
+
+      - name: Publish latest main build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: main-${{ github.sha }}
+        run: |
+          test -f release/Codex-Notification-Bridge-macOS-arm64.zip
+          test -f release/Codex-Notification-Bridge-macOS-x64.zip
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/*.zip --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" release/*.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Codex Notification Bridge — main ${GITHUB_SHA:0:7}" \
+              --notes "Automated build from main commit ${GITHUB_SHA}." \
+              --latest
+          fi
