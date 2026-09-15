@@ -10,7 +10,7 @@
     "test": "node --test",
     "benchmark": "node scripts/benchmark-routing.js",
     "package:mac": "npm run package:mac:arm64",
-    "package:mac:arm64": "electron-packager . \"Codex Notification Bridge\" --platform=darwin --arch=arm64 --out=dist --overwrite --asar --app-bundle-id=com.konaito.codex-notification-bridge --app-version=\"$npm_package_version\" --ignore='^/dist($|/)'"
+    "package:mac:arm64": "electron-packager . \"Codex Notification Bridge\" --platform=darwin --arch=arm64 --out=dist --overwrite --asar --icon=assets/codex-notification-bridge.icns --app-bundle-id=com.konaito.codex-notification-bridge --app-version=\"$npm_package_version\" --ignore='^/dist($|/)'"
   },
   "build": {
     "appId": "com.konaito.codex-notification-bridge",
