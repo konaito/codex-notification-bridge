@@ -58,6 +58,19 @@ jobs:
       - name: Package application
         run: npm run package:mac:arm64
 
+      - name: Verify packaged application icon
+        shell: bash
+        run: |
+          app_path="dist/Codex Notification Bridge-darwin-arm64/Codex Notification Bridge.app"
+          plist_path="$app_path/Contents/Info.plist"
+          icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$plist_path")"
+          if [[ "$icon_name" != *.icns ]]; then
+            icon_name="$icon_name.icns"
+          fi
+          packaged_icon="$app_path/Contents/Resources/$icon_name"
+          test -f "$packaged_icon"
+          cmp assets/codex-notification-bridge.icns "$packaged_icon"
+
       - name: Create distributable DMG
         shell: bash
         run: |
