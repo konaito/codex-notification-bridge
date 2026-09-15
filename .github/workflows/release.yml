@@ -42,6 +42,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: test
     runs-on: macos-14
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -52,15 +56,48 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Import Developer ID certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in APPLE_CERTIFICATE APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required secret $name is not configured"
+              exit 1
+            fi
+          done
+
+          certificate="$RUNNER_TEMP/developer-id.p12"
+          keychain="$RUNNER_TEMP/build.keychain-db"
+          keychain_password="$(uuidgen)"
+
+          printf '%s' "$APPLE_CERTIFICATE" | /usr/bin/base64 -D > "$certificate"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -k "$keychain" -P "" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain"
+
+          identity="$(security find-identity -v -p codesigning "$keychain" | sed -n '/"Developer ID Application:/{s/.*"\(Developer ID Application:.*\)"/\1/p;q;}')"
+          if [[ -z "$identity" ]]; then
+            echo "::error::Developer ID Application identity was not found"
+            exit 1
+          fi
+          echo "APPLE_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Package application
-        run: npm run package:mac:arm64
+      - name: Package and sign application
+        run: npm run package:mac:arm64 -- --osx-sign.identity="$APPLE_SIGNING_IDENTITY"
 
-      - name: Verify packaged application icon
+      - name: Verify packaged application
         shell: bash
         run: |
+          set -euo pipefail
           app_path="dist/Codex Notification Bridge-darwin-arm64/Codex Notification Bridge.app"
           plist_path="$app_path/Contents/Info.plist"
           icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$plist_path")"
@@ -70,10 +107,29 @@ jobs:
           packaged_icon="$app_path/Contents/Resources/$icon_name"
           test -f "$packaged_icon"
           cmp assets/codex-notification-bridge.icns "$packaged_icon"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
 
-      - name: Create distributable DMG
+      - name: Notarize and staple application
         shell: bash
         run: |
+          set -euo pipefail
+          app_path="dist/Codex Notification Bridge-darwin-arm64/Codex Notification Bridge.app"
+          archive="$RUNNER_TEMP/Codex-Notification-Bridge-${{ github.sha }}-macOS-arm64.zip"
+          ditto -c -k --keepParent "$app_path" "$archive"
+          xcrun notarytool submit "$archive" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$app_path"
+          xcrun stapler validate "$app_path"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          spctl --assess --type execute --verbose=4 "$app_path"
+
+      - name: Create, sign, and notarize distributable DMG
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p release
           app_path="dist/Codex Notification Bridge-darwin-arm64/Codex Notification Bridge.app"
           disk_image="release/Codex-Notification-Bridge-macOS-arm64.dmg"
@@ -84,6 +140,16 @@ jobs:
             -ov \
             -format UDZO \
             "$disk_image"
+          codesign --force --sign "$APPLE_SIGNING_IDENTITY" --timestamp "$disk_image"
+          xcrun notarytool submit "$disk_image" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$disk_image"
+          xcrun stapler validate "$disk_image"
+          codesign --verify --verbose=4 "$disk_image"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$disk_image"
 
       - name: Upload packaged application
         uses: actions/upload-artifact@v4
